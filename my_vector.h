@@ -7,11 +7,13 @@
 #include <memory>
 #include <cstdint>
 
+const size_t SIZE = 32;
+
 struct my_vector {
     bool is_vector_created = false;
     size_t vector_size;
     union any_data {
-        uint32_t small_data[4];
+        uint32_t small_data[SIZE];
         std::shared_ptr<std::vector<uint32_t>> big_data;
         any_data() {};
         ~any_data() {};
