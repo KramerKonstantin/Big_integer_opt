@@ -7,7 +7,9 @@ my_vector::my_vector(my_vector const &vector) : is_vector_created(vector.is_vect
     if (vector.is_vector_created) {
         new (&_data.big_data) std::shared_ptr<std::vector<uint32_t>>(vector._data.big_data);
     } else {
-        std::copy(vector._data.small_data, vector._data.small_data + 4, _data.small_data);
+        for (size_t i = 0; i < SIZE; i++) {
+            _data.small_data[i] = vector._data.small_data[i];
+        }
     }
 }
 
@@ -17,24 +19,28 @@ my_vector &my_vector::operator=(my_vector const &vector) {
     if (vector.is_vector_created) {
         new (&_data.big_data) std::shared_ptr<std::vector<uint32_t>>(vector._data.big_data);
     } else {
-        std::copy(vector._data.small_data, vector._data.small_data + 4, _data.small_data);
+        for (size_t i = 0; i < SIZE; i++) {
+            _data.small_data[i] = vector._data.small_data[i];
+        }
     }
     return *this;
 }
 
 my_vector::my_vector(size_t size) : vector_size(size) {
-    if (vector_size > 4) {
+    if (vector_size > SIZE) {
         is_vector_created = true;
         new (&_data.big_data) std::shared_ptr<std::vector<uint32_t>>(new std::vector<uint32_t>(size));
     }
 }
 
 my_vector::my_vector(size_t size, uint32_t value) : vector_size(size) {
-    if (vector_size > 4) {
+    if (vector_size > SIZE) {
         is_vector_created = true;
         new (&_data.big_data) std::shared_ptr<std::vector<uint32_t>>(new std::vector<uint32_t>(size, value));
     } else {
-        std::fill(_data.small_data, _data.small_data + 4, value);
+        for (unsigned int &i : _data.small_data) {
+            i = value;
+        }
     }
 }
 
@@ -60,7 +66,7 @@ void my_vector::ensure_unique() {
 }
 
 void my_vector::push_back(uint32_t value) {
-  if (!is_vector_created && vector_size < 4) {
+  if (!is_vector_created && vector_size < SIZE) {
       _data.small_data[vector_size] = value;
   } else {
       if (!is_vector_created) {
@@ -86,7 +92,7 @@ uint32_t my_vector::pop_back() {
 }
 
 void my_vector::push_front(uint32_t value) {
-    if (!is_vector_created && vector_size < 4) {
+    if (!is_vector_created && vector_size < SIZE) {
         for (size_t i = vector_size; i > 0; i--) {
             _data.small_data[i] = _data.small_data[i - 1];
         }
@@ -132,16 +138,20 @@ uint32_t &my_vector::back() {
 }
 
 void my_vector::swap_big_small(my_vector::any_data &big, my_vector::any_data &small) {
-    uint32_t temp[4];
-    std::copy(small.small_data, small.small_data + 4, temp);
+    uint32_t temp[SIZE];
+    for (size_t i = 0; i < SIZE; i++) {
+        temp[i] = small.small_data[i];
+    }
     new(&small.big_data) std::shared_ptr<std::vector<uint32_t>>(big.big_data);
     big.big_data.reset();
-    std::copy(temp, temp + 4, big.small_data);
+    for (size_t i = 0; i < SIZE; i++) {
+        big.small_data[i] = temp[i];
+    }
 }
 
 void my_vector::swap(my_vector &a, my_vector &b) {
     if (!a.is_vector_created && !b.is_vector_created) {
-        for (size_t i = 0; i < 4; i++) {
+        for (size_t i = 0; i < SIZE; i++) {
             std::swap(a._data.small_data[i], b._data.small_data[i]);
         }
     } else if (a.is_vector_created && b.is_vector_created) {
@@ -169,11 +179,11 @@ bool operator==(my_vector const &a, my_vector const &b) {
 }
 
 void my_vector::resize(size_t size) {
-    if (is_vector_created && size <= 4) {
+    if (is_vector_created && size <= SIZE) {
         ensure_unique();
         _data.big_data->resize(size);
     }
-    if (size > 4) {
+    if (size > SIZE) {
         if (!is_vector_created) {
             to_big();
         }
@@ -185,8 +195,10 @@ void my_vector::resize(size_t size) {
 
 void my_vector::to_big() {
     is_vector_created = true;
-    uint32_t temp[4];
-    std::copy(_data.small_data, _data.small_data + 4, temp);
+    uint32_t temp[SIZE];
+    for (size_t i = 0; i < SIZE; i++) {
+        temp[i] = _data.small_data[i];
+    }
     new (&_data.big_data) std::shared_ptr<std::vector<uint32_t>>(new std::vector<uint32_t>());
     for (size_t i = 0; i < vector_size; i++) {
         _data.big_data->push_back(temp[i]);
